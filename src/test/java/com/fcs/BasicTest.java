@@ -6,7 +6,10 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 
 /**
  * Created by fengcs on 2018/6/21.
@@ -34,7 +37,7 @@ public class BasicTest {
     }
 
     @Test
-    public void connectionTest() throws SQLException {
+    public void testConnection() throws SQLException {
         Connection connection = ds.getConnection();
         Statement statement =  connection.createStatement();
         ResultSet resultSet = statement.executeQuery("select id from tb_user");
@@ -42,6 +45,16 @@ public class BasicTest {
         while (resultSet.next()) {
             firstValue = resultSet.getString(1);
             System.out.println(firstValue);
+        }
+    }
+
+    @Test
+    public void testNormal(){
+        for (int i = 0; i < 1000; i++) {
+            if ((i & 0xff) == 0xff) {
+                System.out.println(i);
+                System.out.println(Integer.toBinaryString(i));
+            }
         }
     }
 

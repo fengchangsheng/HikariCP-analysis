@@ -129,6 +129,7 @@ public class ConcurrentBag<T extends IConcurrentBagEntry> implements AutoCloseab
     */
    public T borrow(long timeout, final TimeUnit timeUnit) throws InterruptedException
    {
+      // 优先查看有没有可用的本地化的资源
       // Try the thread-local list first
       List<Object> list = threadList.get();
       if (weakThreadLocals && list == null) {
@@ -145,6 +146,7 @@ public class ConcurrentBag<T extends IConcurrentBagEntry> implements AutoCloseab
          }
       }
 
+      // 当无可用本地化资源时，遍历全部资源，查看是否存在可用资源
       // Otherwise, scan the shared list ... then poll the handoff queue
       final int waiting = waiters.incrementAndGet();
       try {
@@ -163,6 +165,7 @@ public class ConcurrentBag<T extends IConcurrentBagEntry> implements AutoCloseab
          timeout = timeUnit.toNanos(timeout);
          do {
             final long start = CLOCK.currentTime();
+            // 当现有全部资源全部在使用中，等待一个被释放的资源或者一个新资源
             final T bagEntry = handoffQueue.poll(timeout, NANOSECONDS);
             if (bagEntry == null || bagEntry.compareAndSet(STATE_NOT_IN_USE, STATE_IN_USE)) {
                return bagEntry;
@@ -220,9 +223,10 @@ public class ConcurrentBag<T extends IConcurrentBagEntry> implements AutoCloseab
          LOGGER.info("ConcurrentBag has been closed, ignoring add()");
          throw new IllegalStateException("ConcurrentBag has been closed, ignoring add()");
       }
-
+      // 新添加的资源优先放入CopyOnWriteArrayList
       sharedList.add(bagEntry);
 
+      // 当有等待资源的线程时，将资源交到某个等待线程后才返回（SynchronousQueue）
       // spin until a thread takes it or none are waiting
       while (waiters.get() > 0 && !handoffQueue.offer(bagEntry)) {
          yield();
@@ -240,6 +244,7 @@ public class ConcurrentBag<T extends IConcurrentBagEntry> implements AutoCloseab
     */
    public boolean remove(final T bagEntry)
    {
+      // 如果资源正在使用且无法进行状态切换，则返回失败
       if (!bagEntry.compareAndSet(STATE_IN_USE, STATE_REMOVED) && !bagEntry.compareAndSet(STATE_RESERVED, STATE_REMOVED) && !closed) {
          LOGGER.warn("Attempt to remove an object from the bag that was not borrowed or reserved: {}", bagEntry);
          return false;
