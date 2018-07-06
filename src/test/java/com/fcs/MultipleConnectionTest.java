@@ -10,6 +10,10 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.concurrent.BrokenBarrierException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by fengcs on 2018/6/25.
@@ -17,6 +21,8 @@ import java.sql.Statement;
 public class MultipleConnectionTest{
 
     private HikariDataSource ds;
+    private static CountDownLatch latch = new CountDownLatch(5);
+//    private static CyclicBarrier cyclicBarrier = new CyclicBarrier(6);
 
     @Before
     public void setup() {
@@ -26,7 +32,7 @@ public class MultipleConnectionTest{
         config.setUsername("root");
         config.setPassword("fengcs");
         config.setMinimumIdle(1);
-        config.setMaximumPoolSize(3);
+        config.setMaximumPoolSize(5);
 
         ds = new HikariDataSource(config);
     }
@@ -37,15 +43,21 @@ public class MultipleConnectionTest{
     }
 
     @Test
-    public void testMulConnection() throws InterruptedException {
+    public void testMulConnection() throws BrokenBarrierException, InterruptedException {
+
         ConnectionThread connectionThread = new ConnectionThread();
-        Thread thread = null;
+        Thread thread;
         for (int i = 0; i < 5; i++) {
             thread = new Thread(connectionThread, "thread-con-"+i);
             thread.start();
-            thread.join();
+            // 这种搞法相当于同步执行了
+//            thread.join();
         }
-//        Thread.sleep(5000);
+        latch.await();
+
+//        cyclicBarrier.await();
+        TimeUnit.SECONDS.sleep(5);
+        System.out.println(" >>>>>>>>>>>>>>>>>>>>>>>bye!");
     }
 
     private class ConnectionThread implements Runnable{
@@ -64,9 +76,11 @@ public class MultipleConnectionTest{
                     firstValue = resultSet.getString(1);
                     System.out.print(firstValue);
                 }
+//                cyclicBarrier.await();
+                latch.countDown();
             } catch (SQLException e) {
                 e.printStackTrace();
-            } finally {
+            }  finally {
                 try {
                     if (connection != null) {
                         connection.close();

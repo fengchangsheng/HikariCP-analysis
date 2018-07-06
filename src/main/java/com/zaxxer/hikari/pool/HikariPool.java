@@ -489,6 +489,7 @@ public class HikariPool extends PoolBase implements HikariPoolMXBean, IBagStateL
     */
    private void checkFailFast()
    {
+      // 获取初始化失败超时时间   默认为 1 毫秒
       final long initializationTimeout = config.getInitializationFailTimeout();
       if (initializationTimeout < 0) {
          return;
