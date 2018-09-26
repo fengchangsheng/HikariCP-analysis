@@ -130,7 +130,7 @@ public class HikariPool extends PoolBase implements HikariPoolMXBean, IBagStateL
       this.closeConnectionExecutor = createThreadPoolExecutor(config.getMaximumPoolSize(), poolName + " connection closer", threadFactory, new ThreadPoolExecutor.CallerRunsPolicy());
 
       this.leakTask = new ProxyLeakTask(config.getLeakDetectionThreshold(), houseKeepingExecutorService);
-
+      // 100毫秒后第一次启动  以后每隔30秒run一次
       this.houseKeepingExecutorService.scheduleWithFixedDelay(new HouseKeeper(), 100L, HOUSEKEEPING_PERIOD_MS, MILLISECONDS);
    }
 
@@ -651,11 +651,11 @@ public class HikariPool extends PoolBase implements HikariPoolMXBean, IBagStateL
             connectionTimeout = config.getConnectionTimeout();
             validationTimeout = config.getValidationTimeout();
             leakTask.updateLeakDetectionThreshold(config.getLeakDetectionThreshold());
-
+            // 默认10分钟
             final long idleTimeout = config.getIdleTimeout();
             final long now = clockSource.currentTime();
 
-            // Detect retrograde time, allowing +128ms as per NTP spec.
+            // Detect retrograde time, allowing +128ms as per NTP spec.  检测时钟变化
             if (clockSource.plusMillis(now, 128) < clockSource.plusMillis(previous, HOUSEKEEPING_PERIOD_MS)) {
                LOGGER.warn("{} - Retrograde clock change detected (housekeeper delta={}), soft-evicting connections from pool.",
                            poolName, clockSource.elapsedDisplayString(previous, now));
@@ -665,7 +665,7 @@ public class HikariPool extends PoolBase implements HikariPoolMXBean, IBagStateL
                return;
             }
             else if (now > clockSource.plusMillis(previous, (3 * HOUSEKEEPING_PERIOD_MS) / 2)) {
-               // No point evicting for forward clock motion, this merely accelerates connection retirement anyway
+               // No point evicting for forward clock motion, this merely accelerates connection retirement anyway 时钟跳跃
                LOGGER.warn("{} - Thread starvation or clock leap detected (housekeeper delta={}).", poolName, clockSource.elapsedDisplayString(previous, now));
             }
 

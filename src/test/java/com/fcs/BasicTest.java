@@ -10,6 +10,7 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by fengcs on 2018/6/21.
@@ -25,19 +26,19 @@ public class BasicTest {
         config.setDriverClassName("com.mysql.jdbc.Driver");
         config.setUsername("root");
         config.setPassword("fengcs");
-        config.setMinimumIdle(1);
-        config.setMaximumPoolSize(2);
+        config.setMinimumIdle(5);
+        config.setMaximumPoolSize(6);
 
         ds = new HikariDataSource(config);
     }
 
-    @After
+//    @After
     public void teardown() {
         ds.close();
     }
 
     @Test
-    public void testConnection() throws SQLException {
+    public void testConnection() throws SQLException, InterruptedException {
         Connection connection = ds.getConnection();
         Statement statement =  connection.createStatement();
         ResultSet resultSet = statement.executeQuery("select id from tb_user");
@@ -46,6 +47,8 @@ public class BasicTest {
             firstValue = resultSet.getString(1);
             System.out.println(firstValue);
         }
+        TimeUnit.MINUTES.sleep(5);
+
     }
 
     @Test

@@ -50,6 +50,10 @@ import javassist.bytecode.ClassFile;
  * method bodies into the {@link ProxyFactory} class methods that can instantiate
  * instances of the generated proxies.
  *
+ * 利用插件在编译时启动此main方法生成代理子类
+ * 关于为什么要生成这些代理子类，请看我向作者的提问：
+ * https://github.com/brettwooldridge/HikariCP/issues/1198
+ *
  * @author Brett Wooldridge
  */
 public final class JavassistProxyFactory
@@ -68,6 +72,7 @@ public final class JavassistProxyFactory
          generateProxyClass(Connection.class, ProxyConnection.class.getName(), methodBody);
          generateProxyClass(Statement.class, ProxyStatement.class.getName(), methodBody);
          generateProxyClass(ResultSet.class, ProxyResultSet.class.getName(), methodBody);
+         System.out.println("========================= JavassistProxyFactory.main ===============================");
 
          // For these we have to cast the delegate
          methodBody = "{ try { return ((cast) delegate).method($$); } catch (SQLException e) { throw checkException(e); } }";
