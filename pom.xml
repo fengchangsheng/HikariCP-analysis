@@ -54,7 +54,7 @@
       <slf4j.version>1.7.21</slf4j.version>
       <log4j.version>2.6.2</log4j.version>
       <commons.csv.version>1.4</commons.csv.version>
-      <h2.version>1.4.192</h2.version>
+      <h2.version>2.1.210</h2.version>
       <junit.version>4.12</junit.version>
    </properties>
 
